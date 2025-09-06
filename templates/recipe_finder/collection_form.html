@@ -1,0 +1,137 @@
+{% extends 'recipe_finder/base.html' %}
+{% load static %}
+
+{% block title %}{% if editing %}Edit{% else %}Create{% endif %} Collection - RecipeFinder{% endblock %}
+
+{% block main_styles %}
+<link rel="stylesheet" href="{% static 'css/pages/collection_form.css' %}">
+{% endblock %}
+
+{% block page_js %}
+<script src="{% static 'js/pages/collection_form.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="form-container collection-form-container">
+    <div class="form-header">
+        <i class="fas {% if editing %}fa-edit{% else %}fa-folder-plus{% endif %} header-icon"></i>
+        <h1>{% if editing %}Edit{% else %}Create{% endif %} Collection</h1>
+        <p>{% if editing %}Update your collection details{% else %}Organize your favorite recipes in a collection{% endif %}</p>
+    </div>
+    
+    <div class="form-content">
+        <form method="post" class="standard-form" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+                <div class="form-error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div class="error-content">
+                        <h4>Please correct the following errors:</h4>
+                        {{ form.errors }}
+                    </div>
+                </div>
+            {% endif %}
+            
+            <div class="form-layout">
+                <div class="form-main">
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label for="{{ form.name.id_for_label }}">
+                                <i class="fas fa-folder"></i> Collection Name*
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="error-message">{{ form.name.errors }}</div>
+                            {% endif %}
+                            <small class="form-text">Choose a name that describes your collection</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.description.id_for_label }}">
+                                <i class="fas fa-align-left"></i> Description
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="error-message">{{ form.description.errors }}</div>
+                            {% endif %}
+                            <small class="form-text">Tell others what this collection is about (optional)</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.image.id_for_label }}">
+                                <i class="fas fa-image"></i> Collection Image
+                            </label>
+                            <div class="image-upload-container">
+                                <div class="image-preview-wrapper" id="image-preview-wrapper">
+                                    {% if form.instance.image %}
+                                        <div class="image-preview" id="image-preview">
+                                            <img src="{{ form.instance.image.url }}" alt="Collection Image">
+                                        </div>
+                                    {% else %}
+                                        <div class="image-preview empty" id="image-preview">
+                                            <i class="fas fa-image"></i>
+                                            <span>No image selected</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="image-upload-controls">
+                                    <label for="{{ form.image.id_for_label }}" class="custom-file-upload">
+                                        <i class="fas fa-upload"></i> Choose Image
+                                    </label>
+                                    {{ form.image }}
+                                    {% if form.image.errors %}
+                                        <div class="error-message">{{ form.image.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text">Upload an image that represents your collection (optional)</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group privacy-toggle">
+                            <div class="toggle-label">
+                                <i class="fas fa-globe"></i> Collection Privacy
+                            </div>
+                            <div class="toggle-container">
+                                <div class="toggle-options">
+                                    <span class="option-public {% if not editing or form.is_public.value %}active{% endif %}">Public</span>
+                                    <span class="option-private {% if editing and not form.is_public.value %}active{% endif %}">Private</span>
+                                </div>
+                            </div>
+                            <input type="hidden" name="is_public" value="{% if not editing or form.is_public.value %}true{% else %}false{% endif %}">
+                            <small class="form-text">Public collections can be viewed by anyone. Private collections are only visible to you.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary pulse-effect">
+                            <i class="fas fa-save"></i>
+                            {% if editing %}
+                                Save Changes
+                            {% else %}
+                                Create Collection
+                            {% endif %}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+        
+        {% if editing %}
+        <div class="form-divider"></div>
+        
+        <div class="danger-zone">
+            <h3><i class="fas fa-exclamation-triangle"></i> Danger Zone</h3>
+            <p>Once you delete a collection, there is no going back. Please be certain.</p>
+            <form action="{% url 'collection_delete' collection.pk %}" method="post" class="delete-form">
+                {% csrf_token %}
+                <button type="submit" class="btn delete-btn" onclick="return confirm('Are you sure you want to delete this collection? This action cannot be undone.')">
+                    <i class="fas fa-trash-alt"></i> Delete this collection
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

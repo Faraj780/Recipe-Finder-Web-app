@@ -1,0 +1,146 @@
+{% extends 'recipe_finder/base.html' %}
+{% load static %}
+
+{% block title %}Browse Recipes - RecipeFinder{% endblock %}
+
+{% block main_styles %}
+<link rel="stylesheet" href="{% static 'css/pages/recipe_list.css' %}">
+{% endblock %}
+
+{% block page_js %}
+<script src="{% static 'js/pages/recipe_list.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="recipe-list-container">
+    <div class="recipe-list-header">
+        <h1>Browse Recipes</h1>
+        <p>Discover delicious recipes from our community</p>
+    </div>
+
+    <div class="recipe-filter-section">
+        <form method="get" class="filter-form">
+            <div class="search-bar">
+                {{ form.query }}
+                <button type="submit" class="search-button"><i class="fas fa-search"></i></button>
+            </div>
+            
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="{{ form.category.id_for_label }}">Category:</label>
+                    {{ form.category }}
+                </div>
+                
+                <div class="filter-group">
+                    <label for="{{ form.difficulty.id_for_label }}">Difficulty:</label>
+                    {{ form.difficulty }}
+                </div>
+                
+                <div class="filter-group">
+                    <label for="{{ form.max_cooking_time.id_for_label }}">Max Cooking Time:</label>
+                    {{ form.max_cooking_time }}
+                </div>
+                
+                <button type="submit" class="filter-button">Apply Filters</button>
+                <a href="{% url 'recipe_list' %}" class="reset-button">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="category-chips">
+        {% for category in categories %}
+            <a href="{% url 'category_detail' category.slug %}" class="category-chip">
+                {{ category.name }}
+            </a>
+        {% endfor %}
+    </div>
+
+    {% if page_obj %}
+        <div class="recipes-grid">
+            {% for recipe in page_obj %}
+                <div class="recipe-card">
+                    <div class="recipe-image">
+                        <a href="{% url 'recipe_detail' recipe.slug %}">
+                        {% if recipe.images.exists %}
+                            <img src="{{ recipe.images.first.image.url }}" alt="{{ recipe.title }}">
+                        {% else %}
+                            <img src="{% static 'images/recipe-placeholder.jpg' %}" alt="{{ recipe.title }}">
+                        {% endif %}
+                        </a>
+                        <div class="recipe-badge">
+                            <span class="difficulty-badge {{ recipe.difficulty }}">{{ recipe.get_difficulty_display }}</span>
+                        </div>
+                    </div>
+                    <div class="recipe-info">
+                        <h3><a href="{% url 'recipe_detail' recipe.slug %}">{{ recipe.title }}</a></h3>
+                        <div class="recipe-meta">
+                            <span><i class="far fa-clock"></i> {{ recipe.total_time }} min</span>
+                            <span>
+                                <a href="#" class="like-recipe-link" data-recipe-id="{{ recipe.id }}">
+                                    <i class="{% if user.is_authenticated and recipe.id in liked_recipes_ids %}fas{% else %}far{% endif %} fa-heart"></i> 
+                                    <span class="like-count">{{ recipe.likes_count }}</span>
+                                </a>
+                            </span>
+                            <span>
+                                <a href="{% url 'recipe_detail' recipe.slug %}#comments">
+                                    <i class="far fa-comment"></i> {{ recipe.comments_count }}
+                                </a>
+                            </span>
+                        </div>
+                        <p class="recipe-excerpt">{{ recipe.description|truncatechars:100 }}</p>
+                        <div class="recipe-author">
+                            <a href="{% url 'profile_with_username' recipe.author.username %}">
+                                {% if recipe.author.profile.profile_pic %}
+                                    <img src="{{ recipe.author.profile.profile_pic.url }}" alt="{{ recipe.author.username }}">
+                                {% else %}
+                                    <i class="fas fa-user-circle"></i>
+                                {% endif %}
+                                <span>{{ recipe.author.username }}
+                                    {% if recipe.author.profile.is_chef and recipe.author.profile.chef_verified %}
+                                        <i class="fas fa-check-circle verified-badge" title="Verified Chef"></i>
+                                    {% endif %}
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="pagination">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1{% if request.GET.urlencode and '&' in request.GET.urlencode or 'page=' in request.GET.urlencode %}&{% endif %}{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}">&laquo; first</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.urlencode and '&' in request.GET.urlencode or 'page=' in request.GET.urlencode %}&{% endif %}{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}">previous</a>
+                {% endif %}
+        
+                <span class="current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+        
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.urlencode and '&' in request.GET.urlencode or 'page=' in request.GET.urlencode %}&{% endif %}{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}">next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.urlencode and '&' in request.GET.urlencode or 'page=' in request.GET.urlencode %}&{% endif %}{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}">last &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+    {% else %}
+        <div class="no-recipes">
+            <i class="fas fa-search"></i>
+            <h3>No recipes found</h3>
+            <p>Try adjusting your search criteria or browse all recipes</p>
+            <a href="{% url 'recipe_list' %}" class="btn btn-outline">Browse All Recipes</a>
+        </div>
+    {% endif %}
+    
+    {% if user.is_authenticated %}
+    <div class="create-recipe-cta">
+        <div class="cta-content">
+            <h3>Have a recipe to share?</h3>
+            <p>Share your culinary creations with our community</p>
+            <a href="{% url 'recipe_create' %}" class="btn btn-primary">Create New Recipe</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
